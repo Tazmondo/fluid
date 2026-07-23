@@ -8,6 +8,7 @@ local async = require("@self/reactive/async")
 local bind = require("@self/instances/bind")
 local changed = require("@self/instances/changed")
 local cleanup = require("@self/reactive/cleanup")
+local context = require("@self/reactive/context")
 local create = require("@self/instances/create")
 local deferred = require("@self/reactive/deferred")
 local derive = require("@self/reactive/derive")
@@ -34,6 +35,7 @@ local untrack = require("@self/reactive/untrack")
 export type UsedAs<T> = types.UsedAs<T>
 export type Source<T> = types.Source<T>
 export type Action = action.Identity
+export type Context<T> = context.Context<T>
 export type PropertiesFor<T> = create.PropertiesFor<T>
 
 local scheduler_thread: thread? = nil
@@ -76,6 +78,7 @@ fluid.is_action = action.is_action
 
 -- Reactive graph
 fluid.cleanup = cleanup
+fluid.context = context
 fluid.derive = derive
 fluid.effect = effect
 fluid.deferred = deferred

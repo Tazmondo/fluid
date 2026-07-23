@@ -1173,6 +1173,113 @@ TEST(
 )
 
 TEST(
+	"context",
+	wrap_root(function()
+		do
+			CASE("uses provided and default values")
+			local context = fluid.context("default")
+
+			CHECK(context() == "default")
+
+			local result = context("provided", function()
+				CHECK(context() == "provided")
+				return context()
+			end)
+
+			CHECK(result == "provided")
+			CHECK(context() == "default")
+		end
+
+		do
+			CASE("errors when no value or default is set")
+			local context = fluid.context()
+
+			CHECK(not pcall(context))
+		end
+
+		do
+			CASE("supports nil values")
+			local context = fluid.context(nil :: boolean?)
+
+			CHECK(context() == nil)
+
+			context(true, function()
+				CHECK(context() == true)
+
+				context(nil, function()
+					CHECK(context() == nil)
+					return nil
+				end)
+
+				return nil
+			end)
+		end
+
+		do
+			CASE("nested providers shadow and restore values")
+			local context = fluid.context("default")
+			local other_context = fluid.context(false)
+
+			context("outer", function()
+				other_context(true, function()
+					CHECK(context() == "outer")
+					CHECK(other_context() == true)
+
+					context("inner", function()
+						CHECK(context() == "inner")
+						CHECK(other_context() == true)
+
+						return nil
+					end)
+
+					CHECK(context() == "outer")
+					return nil
+				end)
+				return nil
+			end)
+		end
+
+		do
+			CASE("descendants retain their provided value")
+			local context = fluid.context("default")
+			local read_context: () -> string
+
+			context("provided", function()
+				read_context = fluid.derive(function()
+					return context()
+				end)
+
+				fluid.effect(function()
+					CHECK(context() == "provided")
+				end)
+
+				return nil
+			end)
+
+			CHECK(read_context() == "provided")
+		end
+
+		do
+			CASE("cleans up descendants and restores scope after an error")
+			local context = fluid.context("default")
+			local cleanup_count = 0
+
+			local ok = pcall(context, "provided", function() -- Luau
+				fluid.cleanup(function()
+					cleanup_count += 1
+				end)
+
+				error("context failure")
+			end)
+
+			CHECK(not ok)
+			CHECK(cleanup_count == 1)
+			CHECK(context() == "default")
+		end
+	end)
+)
+
+TEST(
 	"groups",
 	wrap_root(function()
 		do
